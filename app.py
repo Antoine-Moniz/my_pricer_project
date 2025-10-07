@@ -236,6 +236,12 @@ class OptionPricerApp:
         stderr = mc.std_error()
         st.success(f"Prix Monte Carlo : {price:.4f} (± {stderr:.4f})")
         self._display_monte_carlo_info(option)
+        # Afficher les Greeks calculés par Monte Carlo
+        try:
+            self.display_greeks_montecarlo(params, market, option)
+        except Exception as e:
+            # Ne pas casser l'UI si le calcul des Greeks MC échoue
+            st.warning(f"Impossible d'afficher les Greeks Monte Carlo : {e}")
 
     def pricing_section_with_method(self, market, option, params, method):
         """Version de pricing_section qui utilise une méthode déjà sélectionnée"""
@@ -262,6 +268,21 @@ class OptionPricerApp:
         g = GreeksTree(params, market, option)
         h = self.inputs.get("shifts", dict(delta_gamma=1.0, vega=0.01, rho=0.01, theta=1))
         st.subheader("Greeks (Tree)")
+        st.write(f"Delta : {g.delta(h['delta_gamma']):.4f}")
+        st.write(f"Gamma : {g.gamma(h['delta_gamma']):.4f}")
+        st.write(f"Vega  : {g.vega(h['vega']):.4f}")
+        st.write(f"Theta : {g.theta(h['theta']):.4f}")
+        st.write(f"Rho   : {g.rho(h['rho']):.4f}")
+
+    def display_greeks_montecarlo(self, params, market, option):
+        """Affiche les Greeks calculés par Monte Carlo (différences finies)."""
+        # Utilise la configuration d'inputs (n_paths, seed) pour l'instance MC
+        n_paths = int(self.inputs.get("n_paths", 10000))
+        seed = int(self.inputs.get("seed", 42))
+
+        g = GreeksMonteCarlo(params, market, option, n_paths=n_paths, seed=seed)
+        h = self.inputs.get("shifts", dict(delta_gamma=1.0, vega=0.01, rho=0.01, theta=1))
+        st.subheader("Greeks (Monte Carlo)")
         st.write(f"Delta : {g.delta(h['delta_gamma']):.4f}")
         st.write(f"Gamma : {g.gamma(h['delta_gamma']):.4f}")
         st.write(f"Vega  : {g.vega(h['vega']):.4f}")
