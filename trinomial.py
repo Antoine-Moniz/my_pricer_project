@@ -7,6 +7,61 @@ from typing import Optional, Tuple
 import datetime as dt
 import numpy as np
 
+# Optional Numba support for pure numerical helpers
+try:
+    from numba import njit
+    HAVE_NUMBA = True
+except Exception:
+    HAVE_NUMBA = False
+    def njit(func=None, **kwargs):
+        if func is None:
+            def _decorator(f):
+                return f
+            return _decorator
+        return func
+
+
+@njit
+def _compute_transition_probs(next_mid_price: float, expected: float, variance: float, alpha: float):
+    """Compute transition probabilities (pure numeric) so it can be jitted by Numba.
+
+    Returns (prob_up, prob_mid, prob_down)
+    """
+    prob_down = ((next_mid_price ** (-2) * (variance + expected ** 2) - 1 -
+                  (alpha + 1) * (next_mid_price ** (-1) * expected - 1))
+                 / ((1 - alpha) * (alpha ** (-2) - 1)))
+
+    prob_up = ((next_mid_price ** (-1) * expected - 1) -
+               ((alpha ** (-1) - 1) * prob_down)) / (alpha - 1)
+
+    prob_mid = 1.0 - prob_up - prob_down
+    return prob_up, prob_mid, prob_down
+
+
+@njit
+def _compute_forward_and_variance(spot: float, r: float, delta_t: float, vol: float, dividend_adjustment: float):
+    """Compute forward (expected) and variance from numeric inputs (Numba-friendly)."""
+    pure_forward = spot * np.exp(r * delta_t)
+    expected = pure_forward - dividend_adjustment
+    variance = (spot ** 2 * 
+                np.exp(2 * r * delta_t) * 
+                (np.exp(vol ** 2 * delta_t) - 1))
+    return expected, variance
+
+
+@njit
+def _propagate_reach_probs_numeric(parent_reach: float, prob_up: float, prob_mid: float, prob_down: float):
+    """Compute increments for child reach probabilities (Numba-friendly)."""
+    return parent_reach * prob_up, parent_reach * prob_mid, parent_reach * prob_down
+
+
+@njit
+def _should_build_branches(pruning: bool, reach_prob: float, p_min: float) -> int:
+    """Decide if branches should be built: returns 1 if yes, 0 if no."""
+    if not pruning:
+        return 1
+    return 1 if reach_prob > p_min else 0
+
 
 class TreeNode:
     """Noeud de l'arbre trinomial basé sur la référence."""
@@ -30,20 +85,14 @@ class TreeNode:
     def forward_and_variance(self) -> Tuple[float, float]:
         """Calcule la valeur forward et la variance avec gestion des dividendes."""
         # Calcul de la valeur forward de base
-        pure_forward: float = self.spot * np.exp(self.tree.market.r * self.tree.delta_t)
-        
-        # Ajustement pour les dividendes sur la période
+        # Ajustement pour les dividendes sur la période (non-numba)
         next_date = self.date + dt.timedelta(days=int(self.tree.delta_t * 365))
         dividend_adjustment = self.tree.market.get_dividend_on_period(self.date, next_date)
-        
-        # Forward ajusté pour les dividendes
-        expected: float = pure_forward - dividend_adjustment
-        
-        # Variance (inchangée pour la simplicité)
-        variance: float = (self.spot ** 2 * 
-                          np.exp(2 * self.tree.market.r * self.tree.delta_t) * 
-                          (np.exp(self.tree.market.vol ** 2 * self.tree.delta_t) - 1))
-        
+
+        # Appel au helper numérique jitable
+        expected, variance = _compute_forward_and_variance(float(self.spot), float(self.tree.market.r),
+                                                           float(self.tree.delta_t), float(self.tree.market.vol),
+                                                           float(dividend_adjustment))
         return expected, variance
 
     def set_transition_probs(self) -> None:
@@ -53,27 +102,37 @@ class TreeNode:
             return
 
         expected, variance = self.forward_and_variance()
-        next_mid_price = self.next_mid.spot
-        
-        self.prob_down = ((next_mid_price ** (-2) * (variance + expected ** 2) - 1 - 
-                          (self.tree.alpha + 1) * (next_mid_price ** (-1) * expected - 1)) 
-                         / ((1 - self.tree.alpha) * (self.tree.alpha ** (-2) - 1)))
-        
-        self.prob_up = ((next_mid_price ** (-1) * expected - 1) - 
-                       ((self.tree.alpha ** (-1) - 1) * self.prob_down)) / (self.tree.alpha - 1)
-        
-        self.prob_mid = 1.0 - self.prob_up - self.prob_down
+        next_mid_price = float(self.next_mid.spot)
+
+        # Use the pure numeric helper; this can be jitted by Numba for speed
+        prob_up, prob_mid, prob_down = _compute_transition_probs(next_mid_price, expected, variance, float(self.tree.alpha))
+
+        self.prob_up = prob_up
+        self.prob_mid = prob_mid
+        self.prob_down = prob_down
 
         if (self.prob_up < 0 or self.prob_mid < 0 or self.prob_down < 0):
             print(f"Probabilité négative à la date {self.date}")
 
     def propagate_reach_probs(self) -> None:
         """Propage les probabilités d'atteindre les noeuds."""
-        probabilities = [self.prob_up, self.prob_mid, self.prob_down]
-        nodes = [self.next_up, self.next_mid, self.next_down]
-        for prob, node in zip(probabilities, nodes):
-            if node is not None:
-                node.reach_prob += self.reach_prob * prob
+        # Try to use numeric helper when values are pure floats
+        try:
+            inc_up, inc_mid, inc_down = _propagate_reach_probs_numeric(self.reach_prob, self.prob_up, self.prob_mid, self.prob_down)
+            if self.next_up is not None:
+                self.next_up.reach_prob += inc_up
+            if self.next_mid is not None:
+                self.next_mid.reach_prob += inc_mid
+            if self.next_down is not None:
+                self.next_down.reach_prob += inc_down
+            return
+        except Exception:
+            # Fallback simple loop
+            probabilities = [self.prob_up, self.prob_mid, self.prob_down]
+            nodes = [self.next_up, self.next_mid, self.next_down]
+            for prob, node in zip(probabilities, nodes):
+                if node is not None:
+                    node.reach_prob += self.reach_prob * prob
 
     def compute_next_mid(self) -> 'TreeNode':
         """Crée le prochain noeud du milieu."""
@@ -165,9 +224,8 @@ class TrinomialTree:
     def build_triplet(self, current_node: TreeNode) -> TreeNode:
         """Construit le triplet de noeuds suivants."""
         current_node.next_mid = current_node.compute_next_mid()
-        
         # Si pas de pruning ou probabilité suffisante
-        if not self.params.pruning or current_node.reach_prob > self.params.p_min:
+        if _should_build_branches(self.params.pruning, current_node.reach_prob, self.params.p_min):
             current_node.next_up = current_node.next_mid.compute_up_node()
             current_node.next_down = current_node.next_mid.compute_down_node()
         
@@ -180,7 +238,7 @@ class TrinomialTree:
         parent_node = parent_trunk
         while parent_node.upper_node is not None:
             parent_node = parent_node.upper_node
-            if not self.params.pruning or parent_node.lower_node.reach_prob > self.params.p_min:
+            if _should_build_branches(self.params.pruning, parent_node.lower_node.reach_prob, self.params.p_min):
                 parent_node.next_mid = parent_node.lower_node.next_up
                 self.build_triplet(parent_node)
             else:
@@ -194,7 +252,7 @@ class TrinomialTree:
         parent_node = parent_trunk
         while parent_node.lower_node is not None:
             parent_node = parent_node.lower_node
-            if not self.params.pruning or parent_node.upper_node.reach_prob > self.params.p_min:
+            if _should_build_branches(self.params.pruning, parent_node.upper_node.reach_prob, self.params.p_min):
                 parent_node.next_mid = parent_node.upper_node.next_down
                 self.build_triplet(parent_node)
             else:
