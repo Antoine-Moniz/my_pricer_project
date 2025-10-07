@@ -15,7 +15,7 @@ class BlackScholes:
     """
 
     def __init__(self, params: PricerParameters, market: Market, option: Option) -> None:
-        # ✅ Bloque seulement si dividendes effectivement présents
+        # ✅ Bloque seulement si dividendes effectivement présents ou option américaine
         if option.is_american() or (market.dividends is not None and len(market.dividends) > 0):
             raise TypeError("Option européenne sans dividende discret requise.")
         self.params, self.market, self.option = params, market, option
@@ -69,10 +69,6 @@ class BlackScholes:
         """Calcule les valeurs de convergence avec échantillonnage intelligent."""
         bs_price = self.pricing()
         steps = self._get_convergence_steps(nb_steps_max)
-        
-        print(f"📊 Échantillonnage intelligent: {len(steps)} calculs au lieu de {nb_steps_max}")
-        print(f"⚡ Gain de temps estimé: {nb_steps_max/len(steps):.1f}x plus rapide")
-        
         diffs = self._compute_convergence_diffs(steps, bs_price)
         return diffs, steps
 
@@ -89,8 +85,6 @@ class BlackScholes:
         if strikes[-1] != K_max:
             strikes = np.append(strikes, K_max)
         
-        print(f"📊 Optimisation strikes: {len(strikes)} calculs au lieu de {total_strikes}")
-        print(f"⚡ Gain de temps estimé: {total_strikes/len(strikes):.1f}x plus rapide")
         return strikes
 
     def _compute_prices_for_strikes(self, strikes: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:

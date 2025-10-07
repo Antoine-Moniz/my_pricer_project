@@ -10,7 +10,8 @@ from option import Option
 from monte_carlo import MonteCarloPricer
 from typing import Callable, Union, Tuple
 from functools import lru_cache
-# Numba retiré temporairement pour éviter les erreurs
+from numba import njit
+
 
 
 class ParameterBundle:
@@ -101,13 +102,15 @@ def tree_pricing_function_cached(s0: float, r: float, vol: float, k: float,
 tree_pricing_function_cached = lru_cache(maxsize=128)(tree_pricing_function_cached)
 
 
+@njit
 def finite_difference_numba(price_up: float, price_down: float, shift: float) -> float:
-    """Calcul des différences finies (optimisation Numba retirée temporairement)."""
+    """Calcul des différences finies (accéléré par Numba si disponible)."""
     return (price_up - price_down) / (2.0 * shift)
 
 
+@njit
 def gamma_calculation_numba(price_up: float, price_base: float, price_down: float, shift: float) -> float:
-    """Calcul du gamma (optimisation Numba retirée temporairement)."""
+    """Calcul du gamma (accéléré par Numba si disponible)."""
     delta_up = (price_up - price_base) / shift
     delta_down = (price_base - price_down) / shift
     return (delta_up - delta_down) / shift
