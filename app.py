@@ -47,8 +47,9 @@ class OptionPricerApp:
         mode = st.sidebar.radio("Choix du critère", ["Nombre de pas", "Erreur max tolérée"])
 
         if mode == "Nombre de pas":
-            # MODIFICATION DEMANDÉE : number_input au lieu de slider, valeur par défaut 500
-            steps = st.sidebar.number_input("Nombre de pas (Tree)", min_value=1, max_value=10000, value=500, step=1)
+            # number_input au lieu de slider, valeur par défaut 500
+            # Removed upper bound so user can enter more than 10000 steps if desired
+            steps = st.sidebar.number_input("Nombre de pas (Tree)", min_value=1, value=500, step=1, format="%d")
             max_gap = None
         else:
             max_gap = st.sidebar.number_input("Erreur max tolérée", value=0.01, format="%.4f")
@@ -64,7 +65,8 @@ class OptionPricerApp:
 
     def _sidebar_montecarlo(self):
         st.sidebar.subheader("🎲 Monte Carlo - Options avancées")
-        n_paths = st.sidebar.number_input("Nombre de simulations", min_value=1000, max_value=200000, value=10000, step=1000)
+        # Allow arbitrarily large number of simulations (bounded by memory)
+        n_paths = st.sidebar.number_input("Nombre de simulations", min_value=1, value=10000, step=1000, format="%d")
         seed = st.sidebar.number_input("Graine aléatoire", value=42, step=1)
         return n_paths, seed
 

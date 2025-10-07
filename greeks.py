@@ -55,7 +55,34 @@ class FiniteDifferenceCalculator:
         """Obtient un prix avec mise en cache."""
         cache_key = f"{param_name}_{shift}"
         if cache_key not in self._cache:
-            self._cache[cache_key] = self.pricing_func(bundle)
+            # Fast path: if pricing function is the tree_pricing_function and there are no dividends,
+            # call the primitive cached version with simple numeric arguments to avoid deepcopy.
+            try:
+                func_name = getattr(self.pricing_func, "__name__", "")
+            except Exception:
+                func_name = ""
+
+            if func_name == "tree_pricing_function" and not bundle.dividends:
+                # Prepare primitive args and apply the shift to the requested parameter
+                s0 = bundle.S0 + shift if param_name == "S0" else bundle.S0
+                r = bundle.r + shift if param_name == "r" else bundle.r
+                vol = bundle.vol + shift if param_name == "vol" else bundle.vol
+                k = bundle.K
+                maturity_days = bundle.maturity.toordinal()
+                pricing_days = bundle.pricing_date.toordinal()
+                call_put = bundle.call_put
+                style = bundle.style
+                nb_steps = bundle.nb_steps
+                pruning = bundle.pruning
+                p_min = bundle.p_min
+                self._cache[cache_key] = tree_pricing_function_cached(
+                    s0, r, vol, k, maturity_days, pricing_days, call_put, style, nb_steps, pruning, p_min
+                )
+            else:
+                # Fallback: create a minimal modified bundle to avoid deep copies where possible
+                new_bundle = copy.deepcopy(bundle)
+                setattr(new_bundle, param_name, getattr(bundle, param_name) + shift)
+                self._cache[cache_key] = self.pricing_func(new_bundle)
         return self._cache[cache_key]
     
     def first_derivative(self, param_name: str, shift: float, for_gamma: bool = False) -> Union[float, Tuple[float, float]]:
