@@ -6,19 +6,21 @@ from parameters import PricerParameters
 from typing import Optional, Tuple
 import datetime as dt
 import numpy as np
-
-# Optional Numba support for pure numerical helpers
+ 
+# Optional Numba support: provide a safe no-op `njit` decorator when Numba
+# is not available so the module can be imported in environments without it.
 try:
-    from numba import njit
+    from numba import njit  # type: ignore
     HAVE_NUMBA = True
 except Exception:
     HAVE_NUMBA = False
-    def njit(func=None, **kwargs):
-        if func is None:
-            def _decorator(f):
-                return f
-            return _decorator
-        return func
+    def njit(*args, **kwargs):
+        # Support both @njit and @njit()
+        if len(args) == 1 and callable(args[0]) and not kwargs:
+            return args[0]
+        def _decorator(func):
+            return func
+        return _decorator
 
 
 @njit
@@ -51,7 +53,7 @@ def _compute_forward_and_variance(spot: float, r: float, delta_t: float, vol: fl
 
 @njit
 def _propagate_reach_probs_numeric(parent_reach: float, prob_up: float, prob_mid: float, prob_down: float):
-    """Compute increments for child reach probabilities (Numba-friendly)."""
+    """Compute increments for child reach probabilities."""
     return parent_reach * prob_up, parent_reach * prob_mid, parent_reach * prob_down
 
 
@@ -96,7 +98,7 @@ class TreeNode:
         return expected, variance
 
     def set_transition_probs(self) -> None:
-        """Calcule les probabilités (référence exacte)."""
+        """Calcule les probabilités."""
         if self.tree.params.pruning and self.reach_prob < self.tree.params.p_min:
             self.prob_up, self.prob_mid, self.prob_down = 0, 1, 0
             return
