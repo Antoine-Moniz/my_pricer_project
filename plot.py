@@ -166,9 +166,9 @@ class TreePlotter:
         
         return fig
 
-    # ------------------------------
-    # Public (ultra-optimisé)
-    # ------------------------------
+    # --------
+    # Public 
+    # --------
     @staticmethod
     def plot_tree(tree, max_steps=3, show_values=False):
         """Affiche l'arbre trinomial avec Plotly (ultra-rapide et interactif)."""
