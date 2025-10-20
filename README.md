@@ -96,6 +96,14 @@ scipy>=1.7.0
 
 ---
 
+### Installation rapide
+
+Installez les dépendances listées dans `requirements.txt` :
+
+```bash
+pip install -r requirements.txt
+```
+
 
 ### 📊 **Interface Utilisateur**
 

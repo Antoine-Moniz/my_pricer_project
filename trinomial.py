@@ -88,7 +88,8 @@ class TreeNode:
         """Calcule la valeur forward et la variance avec gestion des dividendes."""
         # Calcul de la valeur forward de base
         # Ajustement pour les dividendes sur la période (non-numba)
-        next_date = self.date + dt.timedelta(days=int(self.tree.delta_t * 365))
+        # utiliser un delta_t flottant pour éviter l'arrondi qui peut déplacer la période
+        next_date = self.date + dt.timedelta(days=self.tree.delta_t * 365)
         dividend_adjustment = self.tree.market.get_dividend_on_period(self.date, next_date)
 
         # Appel au helper numérique jitable
@@ -145,7 +146,48 @@ class TreeNode:
                 self.next_mid = TrunkNode(expected, self.tree, next_date, self)
             else:
                 self.next_mid = TreeNode(expected, self.tree, next_date)
+        # Si nous sommes en période de dividende, ajuster le noeud du milieu pour
+        # préserver la recombinaison (on cherche le candidat approprié)
+        if self.dividend_period():
+            n_candidate = None
+            if self.lower_node is not None and getattr(self.lower_node, 'next_up', None) is not None:
+                n_candidate = self.lower_node.next_up
+            elif self.upper_node is not None and getattr(self.upper_node, 'next_down', None) is not None:
+                n_candidate = self.upper_node.next_down
+            if n_candidate is not None:
+                self.find_next_mid(n_candidate)
         return self.next_mid
+
+    def dividend_period(self) -> bool:
+        """True si un dividende est payé entre ce noeud et le suivant."""
+        # Récupère toutes les dates d'ex-div du marché (liste de tuples (date, amount))
+        try:
+            ex_dates = [d for (d, a) in self.tree.market.dividends]
+        except Exception:
+            ex_dates = []
+        if not ex_dates:
+            return False
+        next_date = self.date + dt.timedelta(days=self.tree.delta_t * 365)
+        for d in ex_dates:
+            if self.date < d <= next_date:
+                return True
+        return False
+
+    def find_next_mid(self, n_candidate: 'TreeNode') -> 'TreeNode':
+        """Ajuste self.next_mid pour qu'il pointe vers le noeud candidat correct lors d'un dividende.
+
+        On déplace le candidat vers le haut ou vers le bas tant que la condition
+        de recombinaison n'est pas satisfaite.
+        """
+        forward = self.forward_and_variance()[0]
+        # Monter le candidat tant que forward >= moyenne(candidate, candidate*alpha)
+        while forward >= (n_candidate.spot + n_candidate.spot * self.tree.alpha) / 2:
+            n_candidate = n_candidate.compute_up_node()
+        # Descendre le candidat tant que forward <= moyenne(candidate, candidate/alpha)
+        while forward <= (n_candidate.spot + n_candidate.spot / self.tree.alpha) / 2:
+            n_candidate = n_candidate.compute_down_node()
+        self.next_mid = n_candidate
+        return n_candidate
 
     def compute_up_node(self) -> 'TreeNode':
         """Crée le noeud supérieur."""
@@ -206,8 +248,8 @@ class TrinomialTree:
         self.df: float = np.exp(-market.r * self.delta_t)
         self.alpha: float = np.exp(market.vol * np.sqrt(3 * self.delta_t))
         
-        # Calcul de l'ajustement total pour les dividendes
-        self.dividend_adjustment = self._calculate_total_dividend_adjustment()
+    # Remarque: on gère les dividendes localement par période dans les noeuds.
+    # On n'applique pas d'ajustement global du spot ici pour éviter le double comptage.
 
     def _calculate_total_dividend_adjustment(self) -> float:
         """Calcule la valeur présente de tous les dividendes futurs."""
@@ -277,16 +319,14 @@ class TrinomialTree:
         if self.params.pruning and self.params.p_min is None:
             raise ValueError("Pruning nécessite p_min")
         
-        # Spot ajusté pour les dividendes (comme dans Monte Carlo)
-        adjusted_spot = self.market.S0 - self.dividend_adjustment
-        
-        self.root = TrunkNode(adjusted_spot, self, self.params.pricing_date)
+        # On utilise le spot du marché en racine; les dividendes sont gérés localement
+        self.root = TrunkNode(self.market.S0, self, self.params.pricing_date)
         self.root.reach_prob = 1.0
         current_trunk = self.root
-        
+
         for _ in range(self.params.nb_steps):
             current_trunk = self.build_column(current_trunk)
-        
+
         self.last = current_trunk
 
     def price_backward(self) -> float:
