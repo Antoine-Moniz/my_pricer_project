@@ -1,4 +1,4 @@
-# 🎯 **Option Pricer - Projet Finance Quantitative**
+# **Option Pricer - Projet Finance Quantitative**
 
 ![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.28+-red.svg)
@@ -10,31 +10,31 @@
 
 ## 📋 **Table des Matières**
 
-- [🎯 Aperçu](#-aperçu)
-- [✨ Fonctionnalités](#-fonctionnalités)
-- [🚀 Installation](#-installation)
-- [💻 Utilisation](#-utilisation)
-- [🔧 Architecture](#-architecture)
-- [📊 Méthodes de Pricing](#-méthodes-de-pricing)
-- [🎨 Visualisations](#-visualisations)
-- [📈 Analyses Avancées](#-analyses-avancées)
-- [🧪 Tests et Validation](#-tests-et-validation)
-- [🤝 Contribution](#-contribution)
-- [📄 Licence](#-licence)
+- [ Aperçu](#-aperçu)
+- [ Fonctionnalités](#-fonctionnalités)
+- [ Installation](#-installation)
+- [ Utilisation](#-utilisation)
+- [ Architecture](#-architecture)
+- [ Méthodes de Pricing](#-méthodes-de-pricing)
+- [ Visualisations](#-visualisations)
+- [ Analyses Avancées](#-analyses-avancées)
+- [ Tests et Validation](#-tests-et-validation)
+- [ Contribution](#-contribution)
+- [ Licence](#-licence)
 
 ---
 
-## 🎯 **Aperçu**
+##  **Aperçu**
 
 Cette application implémente les principales méthodes de pricing d'options en finance quantitative :
 
-- **📚 Théorie** : Modèle de Black-Scholes-Merton
-- **🌳 Numérique** : Arbres trinomiaux avec pruning intelligent
-- **🎲 Simulation** : Monte Carlo avec techniques de réduction de variance
-- **📊 Interface** : Application Streamlit interactive et intuitive
-- **⚡ Performance** : Optimisations algorithmiques et calculs parallélisés
+- ** Théorie** : Modèle de Black-Scholes-Merton
+- ** Numérique** : Arbres trinomiaux avec pruning intelligent
+- ** Simulation** : Monte Carlo avec techniques de réduction de variance
+- ** Interface** : Application Streamlit interactive et intuitive
+- ** Performance** : Optimisations algorithmiques et calculs parallélisés
 
-### 🎯 **Objectifs du Projet**
+###  **Objectifs du Projet**
 
 1. **Pédagogique** : Illustration des concepts de finance quantitative
 2. **Pratique** : Outil de pricing professionnel avec interface moderne
@@ -43,45 +43,45 @@ Cette application implémente les principales méthodes de pricing d'options en 
 
 ---
 
-## ✨ **Fonctionnalités**
+##  **Fonctionnalités**
 
-### 🔢 **Méthodes de Pricing**
+###  **Méthodes de Pricing**
 - **Black-Scholes** : Solution analytique exacte
 - **Arbre Trinomial** : Méthode numérique avec pruning
 - **Monte Carlo** : Simulation avec antithetic variates
 
-### 📈 **Types d'Options**
+###  **Types d'Options**
 - **Européennes** : Call et Put
 - **Américaines** : Exercice anticipé optimal
 - **Gestion des dividendes** : Ajustement automatique
 
-### 🎨 **Visualisations Interactives**
+###  **Visualisations Interactives**
 - **Arbres de pricing** : Visualisation 3D interactive
 - **Convergence** : Analyse de la précision vs nombre de pas
 - **Surfaces de prix** : Visualisation 3D en fonction de S et T
 - **Distributions** : Histogrammes des simulations Monte Carlo
 - **Grecques** : Sensibilités et profils de risque
 
-### ⚡ **Analyses de Performance**
+###  **Analyses de Performance**
 - **Timing** : Comparaison des temps d'exécution
 - **Convergence** : Études de convergence automatisées
 - **Optimisations** : Échantillonnage intelligent adaptatif
 
-### 📤 **Exportation**
+###  **Exportation**
 - **Excel** : Export complet des arbres et résultats
 - **Graphiques** : PNG/PDF 
 - **Données** : CSV pour analyses externes
 
 ---
 
-## 🚀 **Installation**
+##  **Installation**
 
-### 📋 **Prérequis**
+###  **Prérequis**
 - Python 3.8+
 - Git
 
 
-### 📦 **Dépendances Principales**
+###  **Dépendances Principales**
 
 ```txt
 streamlit>=1.28.0
@@ -103,46 +103,46 @@ pip install -r requirements.txt
 ```
 
 
-### 📊 **Interface Utilisateur**
+###  **Interface Utilisateur**
 
 #### **Sidebar - Paramètres**
-- **📈 Marché** : Spot, taux, volatilité
-- **📄 Option** : Strike, maturité, type
-- **💰 Dividendes** : Dates et montants
-- **🎛️ Méthodes** : Configuration des algorithmes
+- ** Marché** : Spot, taux, volatilité
+- ** Option** : Strike, maturité, type
+- ** Dividendes** : Dates et montants
+- ** Méthodes** : Configuration des algorithmes
 
 #### **Main Panel - Résultats**
-- **💵 Prix** : Affichage des prix calculés
-- **📊 Graphiques** : Visualisations interactives
-- **📈 Analyses** : Convergence et performance
-- **📤 Export** : Téléchargement des résultats
+- ** Prix** : Affichage des prix calculés
+- ** Graphiques** : Visualisations interactives
+- ** Analyses** : Convergence et performance
+- ** Export** : Téléchargement des résultats
 
 ---
 
-## 🔧 **Architecture**
+##  **Architecture**
 
-### 📁 **Structure du Projet**
+###  **Structure du Projet**
 
 ```
 my_pricer_project1/
-├── 📄 main.py              # Point d'entrée principal
-├── 🖥️ app.py               # Interface Streamlit principale
-├── 📊 black_sholes.py      # Modèle Black-Scholes-Merton
-├── 🌳 trinomial.py         # Arbre trinomial avec pruning
-├── 🎲 monte_carlo.py       # Simulation Monte Carlo
-├── � option.py            # Définition des options
-├── 📈 market.py            # Paramètres de marché
-├── ⚙️ parameters.py        # Paramètres de calcul
-├── 📊 greeks.py            # Calcul des sensibilités
-├── 📈 convergence.py       # Études de convergence
-├── ⏱️ timing.py            # Analyses de performance
-├── 🎨 plot.py              # Graphiques et visualisations
-├── 📋 README.md            # Documentation du projet
-├── 📤 exports/             # Dossier pour fichiers Excel exportés
-└── 🗂️ __pycache__/         # Cache Python (généré automatiquement)
+├──  main.py              # Point d'entrée principal
+├──  app.py               # Interface Streamlit principale
+├──  black_sholes.py      # Modèle Black-Scholes-Merton
+├──  trinomial.py         # Arbre trinomial avec pruning
+├──  monte_carlo.py       # Simulation Monte Carlo
+├──  option.py            # Définition des options
+├──  market.py            # Paramètres de marché
+├──  parameters.py        # Paramètres de calcul
+├──  greeks.py            # Calcul des sensibilités
+├──  convergence.py       # Études de convergence
+├──  timing.py            # Analyses de performance
+├──  plot.py              # Graphiques et visualisations
+├──  README.md            # Documentation du projet
+├──  exports/             # Dossier pour fichiers Excel exportés
+└──  __pycache__/         # Cache Python (généré automatiquement)
 ```
 
-### 🏗️ **Design Pattern**
+###  **Design Pattern**
 
 - **Modularité** : Chaque méthode dans un module séparé
 - **Extensibilité** : Interface commune pour toutes les méthodes
@@ -151,9 +151,9 @@ my_pricer_project1/
 
 ---
 
-## 📊 **Méthodes de Pricing**
+##  **Méthodes de Pricing**
 
-### 🎓 **Black-Scholes**
+###  **Black-Scholes**
 
 **Formule analytique exacte pour les options européennes**
 
@@ -174,7 +174,7 @@ P = K * e^(-rT) * N(-d₂) - S₀ * N(-d₁)
 - ❌ Uniquement options européennes
 - ❌ Hypothèses restrictives
 
-### 🌳 **Arbre Trinomial**
+###  **Arbre Trinomial**
 
 **Méthode numérique avec 3 branches par nœud**
 
@@ -193,11 +193,11 @@ mid = S * exp(r * Δt)  # Forward
 - ✅ Pruning pour performance
 
 **Caractéristiques** :
-- 📊 Convergence O(Δt²)
-- ⚡ Optimisations algorithmiques
-- 🎯 Précision contrôlable
+-  Convergence O(Δt²)
+-  Optimisations algorithmiques
+-  Précision contrôlable
 
-### 🎲 **Monte Carlo**
+###  **Monte Carlo**
 
 **Simulation de trajectoires stochastiques**
 
@@ -208,38 +208,38 @@ S_T = S₀ * exp((r - σ²/2) * T + σ * √T * Z)
 ```
 ---
 
-## 🎨 **Visualisations**
+##  **Visualisations**
 
-### 📊 **Graphiques Disponibles**
+###  **Graphiques Disponibles**
 
-1. **🌳 Arbres de Pricing**
+1. ** Arbres de Pricing**
    - Visualisation interactive des nœuds
    - Navigation par niveau
    - Affichage des probabilités
 
-2. **📈 Convergence**
+2. ** Convergence**
    - Erreur vs nombre de pas
    - Comparaison des méthodes
    - Analyse de performance
 
-3. **🗻 Surfaces 3D**
+3. ** Surfaces 3D**
    - Prix en fonction de (S, T)
    - Volatilité implicite
    - Grecques
 
-4. **📊 Distributions**
+4. ** Distributions**
    - Histogrammes Monte Carlo
    - Statistiques descriptives
    - Intervalles de confiance
 
-5. **⚡ Performance**
+5. ** Performance**
    - Temps d'exécution
    - Profils de complexité
    - Comparaisons algorithmiques
 ---
 
 
-### 🎛️ **Sensibilité (Grecques)**
+###  **Sensibilité (Grecques)**
 
 - **Δ (Delta)** : Sensibilité au prix du sous-jacent
 - **Γ (Gamma)** : Convexité
@@ -250,14 +250,14 @@ S_T = S₀ * exp((r - σ²/2) * T + σ * √T * Z)
 ---
 
 
-### 🎯 **Validation**
+###  **Validation**
 
 1. **Convergence** : Vérification vs Black-Scholes
 2. **Cohérence** : Put-Call parity
 3. **Limites** : Comportements asymptotiques
 4. **Performance** : Benchmarks de vitesse
 
-### 📊 **Métriques de Qualité**
+###  **Métriques de Qualité**
 
 - **Précision** : Erreur < 0.01% pour options européennes
 - **Performance** : < 1s pour arbres 1000 pas
@@ -267,7 +267,7 @@ S_T = S₀ * exp((r - σ²/2) * T + σ * √T * Z)
 ---
 
 
-### 🎯 **Améliorations Suggérées**
+###  **Améliorations Suggérées**
 
 - [ ] Options asiatiques
 - [ ] Modèles à volatilité stochastique
@@ -277,7 +277,7 @@ S_T = S₀ * exp((r - σ²/2) * T + σ * √T * Z)
 
 ---
 
-## 📚 **Références**
+##  **Références**
 
 1. **Hull, J.** - *Options, Futures, and Other Derivatives*
 2. **Wilmott, P.** - *Paul Wilmott Introduces Quantitative Finance*
